@@ -4,12 +4,17 @@ from pathlib import Path
 import typer
 
 from secret_manager.core import ProjectManager, SecretManager
-from secret_manager.core.schemas import Project, SecretMode
+from secret_manager.core.schemas import Project, SecretMode, Remote, Backend
+from secret_manager.core.remotes import RemoteManager
 from secret_manager.utils import logger
 from secret_manager.utils.selection import select_from_list
+from secret_manager.wizards.remote import configure_aws_backend
+from secret_manager.wizards.project import select_environment, resolve_comparison_environments
 
 
 app = typer.Typer(name="Secrets", help="Secure Secret Management with AWS S3")
+remote_app = typer.Typer(name="Remote", help="Manage remote backends")
+app.add_typer(remote_app, name="remote")
 
 
 @app.command()
@@ -75,9 +80,10 @@ def track(secrets_file: Path, environment: str = None):
             logger.error(f"No project registered for {current_dir}")
             return 1
 
-        # If environment is not provided, prompt the user to select one
-        env = environment or select_from_list(message="Select the environment to track secrets:", choices=["local", "dev", "prod"])
-        env = SecretMode(env)
+        # Use wizard to select environment if not provided
+        env = SecretMode(environment) if environment else select_environment(
+            "Select the environment to track secrets:"
+        )
 
         # Use SecretManager to handle the business logic
         secret_manager = SecretManager(project)
@@ -115,13 +121,12 @@ def list():
 
 
 @app.command()
-def diff(source: str = "local", target: str = "dev"):
+def diff(source: str = None, target: str = None):
     """Compare secrets between two environments
 
     NOTE:
-    - By default it compares local and dev environments
-    - If only one argument is provided, it compares local with that environment
-
+    - By default compares local and dev environments
+    - If neither source nor target is provided, uses interactive selection
     """
 
     try:
@@ -133,15 +138,98 @@ def diff(source: str = "local", target: str = "dev"):
             logger.error(f"No project registered for {current_dir}")
             return 1
 
+        # Use the wizard to resolve environments based on provided parameters
+        source_mode, target_mode = resolve_comparison_environments(source, target)
+
         # Use SecretManager to handle the comparison logic
-        source_mode = SecretMode(source)
-        target_mode = SecretMode(target)
         secret_manager = SecretManager(project)
         return secret_manager.compare_secrets(source_mode, target_mode)
 
     except Exception as e:
         logger.exception(f"Failed to compare environments: {e}")
         return 1
+
+
+@remote_app.command("add")
+def remote_add(name: str = typer.Argument(..., help="Name of the remote")):
+    """Add a new remote backend"""
+    
+    try:
+        remote_manager = RemoteManager()
+        
+        # Check if remote already exists
+        if remote_manager.get_remote(name):
+            logger.error(f"Remote with name '{name}' already exists")
+            return 1
+        
+        # Select backend type - currently only S3 supported
+        backend_type = select_from_list(
+            message="Select backend type:",
+            choices=["s3"],
+        )
+        remote_type = Backend(backend_type)
+        
+        # Configure based on backend type
+        if remote_type == Backend.S3:
+            # Use wizard to handle the complex AWS configuration
+            aws_config = configure_aws_backend()
+            if not aws_config:
+                return 1
+            
+            # Create and add the remote with the configured backend
+            remote = Remote(name=name, type=remote_type, aws_config=aws_config)
+            remote_manager.add_remote(remote)
+            logger.success(f"Remote '{name}' added successfully")
+        else:
+            logger.error(f"Remote type '{backend_type}' is not supported yet")
+            return 1
+            
+    except Exception as e:
+        logger.exception(f"Failed to add remote: {e}")
+        return 1
+        
+    return 0
+    
+    
+@remote_app.command("remove")
+def remote_remove(name: str = typer.Argument(..., help="Name of the remote to remove")):
+    """Remove a remote backend"""
+    
+    try:
+        remote_manager = RemoteManager()
+        
+        # Check if remote exists
+        if not remote_manager.get_remote(name):
+            logger.error(f"Remote with name '{name}' does not exist")
+            return 1
+            
+        # Remove the remote
+        remote_manager.remove_remote(name)
+        logger.success(f"Remote '{name}' removed successfully")
+            
+    except Exception as e:
+        logger.exception(f"Failed to remove remote: {e}")
+        return 1
+        
+    return 0
+    
+    
+@remote_app.command("list")
+def remote_list():
+    """List all configured remotes"""
+    
+    try:
+        remote_manager = RemoteManager()
+        remotes = remote_manager.list_remotes()
+        
+        # Display the remotes
+        logger.display_remotes(remotes)
+            
+    except Exception as e:
+        logger.exception(f"Failed to list remotes: {e}")
+        return 1
+        
+    return 0
 
 
 def main():

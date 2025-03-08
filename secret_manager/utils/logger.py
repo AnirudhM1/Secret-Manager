@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from secret_manager.core.schemas import Secret
+from secret_manager.core.schemas import Secret, Remote
 
 # Initialize console
 console = Console()
@@ -92,3 +92,27 @@ def display_secrets(secrets_data: list[dict[str]], project_root: Path = None):
         if project_root:
             message = f"No secrets are currently tracked for project at {project_root}"
         info(message)
+
+
+def display_remotes(remotes: list[Remote]):
+    """Display remotes in a nicely formatted table."""
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Name", style="cyan")
+    table.add_column("Type", style="green")
+    table.add_column("AWS Region", style="magenta")
+
+    has_remotes = False
+    for remote in remotes:
+        has_remotes = True
+        aws_region = remote.aws_config.AWS_REGION if remote.aws_config else "N/A"
+        
+        table.add_row(
+            f"[bold]{remote.name}[/bold]", 
+            remote.type.value,
+            aws_region
+        )
+
+    if has_remotes:
+        console.print(Panel(table, title="[bold]Configured Remotes[/bold]", border_style="cyan", padding=(1, 2)))
+    else:
+        info("No remotes are currently configured")

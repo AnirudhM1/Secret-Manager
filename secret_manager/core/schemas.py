@@ -29,6 +29,26 @@ class AWSConfig:
 
 
 @dataclass
+class Remote:
+    name: str
+    type: Backend
+    aws_config: AWSConfig = None
+
+    def serialize(self) -> dict:
+        return {
+            "name": self.name,
+            "type": self.type.value,
+            "aws_config": self.aws_config.serialize() if self.aws_config else None,
+        }
+
+    @classmethod
+    def deserialize(cls, data: dict):
+        remote_type = Backend(data["type"])
+        aws_config = AWSConfig.deserialize(data["aws_config"]) if data.get("aws_config") else None
+        return cls(name=data["name"], type=remote_type, aws_config=aws_config)
+
+
+@dataclass
 class Secret:
     path: Path
     backend: Backend
