@@ -38,3 +38,21 @@ class SecretManager:
         
         # Update the project with the given secret
         self.project_manager.update(self.project)
+    
+    def get_all_secrets(self):
+        """Get all secrets for the current project.
+        
+        Returns:
+            List of dictionaries containing environment name and secret object
+        """
+        secrets = []
+        
+        # Check each environment and add to the list if it exists
+        if self.project.local:
+            secrets.append({"environment": "Local", "secret": self.project.local})
+        if self.project.dev:
+            secrets.append({"environment": "Development", "secret": self.project.dev})
+        if self.project.prod:
+            secrets.append({"environment": "Production", "secret": self.project.prod})
+        
+        return secrets

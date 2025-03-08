@@ -99,6 +99,28 @@ def track(secrets_file: Path, environment: str=None):
     return 0
 
 
+@app.command()
+def list():
+    """List all secrets tracked in the current project"""
+    
+    current_dir = Path.cwd()
+    project_manager = ProjectManager()
+    
+    # Find project that contains this directory
+    if (project := project_manager.get_project(current_dir)) is None:
+        logger.error(f"No project registered for {current_dir}")
+        return 1
+    
+    # Use SecretManager to get all secrets
+    secret_manager = SecretManager(project)
+    secrets = secret_manager.get_all_secrets()
+    
+    # Display the secrets
+    logger.display_secrets(secrets, project_root=project.root)
+    
+    return 0
+
+
 def main():
     """Entry point for the CLI."""
     try:
