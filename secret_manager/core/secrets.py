@@ -88,12 +88,12 @@ class SecretManager:
             return 1
         
         # Generate diff
-        diff_output = diff.compute_diff(source_content, target_content)
+        diff_data = diff.compute_diff(source_content, target_content)
         
         # Display diff
-        if not diff_output:
+        if not any(diff_data.values()):
             logger.info(f"No differences found between {source_mode.value} and {target_mode.value} environments")
         else:
-            logger.display("\n".join(diff_output))
+            logger.display_diff(diff_data, source_mode.value, target_mode.value)
         
         return 0

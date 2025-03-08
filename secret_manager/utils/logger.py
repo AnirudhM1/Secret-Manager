@@ -5,7 +5,6 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 from secret_manager.core.schemas import Secret
 
@@ -30,16 +29,36 @@ def info(message: str) -> None:
     console.print(f"[bold blue]ℹ INFO:[/bold blue] {message}")
 
 
-def display(message: str):
-    """Display a message using rich."""
-    console.print(message)
 
-
-def panel(*args, **kwargs):
-    """Display a panel."""
-    console.print(Panel.fit(*args, **kwargs))
-
-
+def display_diff(diff_data: dict, source_env: str, target_env: str):
+    """Display formatted diff output between two environments.
+    
+    Args:
+        diff_data: Dictionary with keys 'additions', 'deletions', and 'changes'
+        source_env: Source environment name
+        target_env: Target environment name
+    """
+    console.print(f"\n[bold]Comparing secrets:[/bold] {source_env} → {target_env}\n")
+    
+    # Display additions (green)
+    for key, value in sorted(diff_data["additions"]):
+        console.print(f"[bold green]+ {key}={value}[/bold green]")
+    
+    # Display deletions (red)
+    for key, value in sorted(diff_data["deletions"]):
+        console.print(f"[bold red]- {key}={value}[/bold red]")
+    
+    # Display changes (yellow)
+    for key, old_value, new_value in sorted(diff_data["changes"]):
+        console.print(f"[bold yellow]~ {key}=[/bold yellow][red]{old_value}[/red] → [green]{new_value}[/green]")
+    
+    # Print summary
+    total_diffs = sum(len(items) for items in diff_data.values())
+    if total_diffs > 0:
+        console.print(f"\n[dim]Found {total_diffs} difference(s): "
+                     f"{len(diff_data['additions'])} addition(s), "
+                     f"{len(diff_data['deletions'])} deletion(s), "
+                     f"{len(diff_data['changes'])} change(s)[/dim]")
 
 
 def display_secrets(secrets_data: list[dict[str]], project_root: Path = None):

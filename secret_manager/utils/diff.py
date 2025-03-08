@@ -1,6 +1,5 @@
 """Utility for computing differences between files."""
 
-import difflib
 import re
 
 
@@ -37,25 +36,40 @@ def filter_content(content: list[str]):
     return filtered_lines
 
 
-def compute_diff(source_content: list[str], target_content: list[str]) -> list[str]:
-    """Compute the diff between two file contents"""
-
+def compute_diff(source_content: list[str], target_content: list[str]) -> dict:
+    """Compute the diff between two file contents treating each line as a key-value pair"""
+    
+    # Get filtered content
     filtered_source = filter_content(source_content)
     filtered_target = filter_content(target_content)
-
-    full_diff = difflib.unified_diff(
-        filtered_source,
-        filtered_target,
-        n=0  # Set context lines to zero
-    )
     
-    # Still need to filter headers but don't need to filter context lines
-    changes_only = []
-    for line in full_diff:
-        # Skip file headers and chunk headers
-        if line.startswith('---') or line.startswith('+++') or line.startswith('@@'):
-            continue
-        changes_only.append(line)
+    # Create dictionaries with key-value pairs
+    source_dict = {}
+    target_dict = {}
     
-    return changes_only
+    for line in filtered_source:
+        key, value = line.split('=', 1)
+        source_dict[key] = value
+        
+    for line in filtered_target:
+        key, value = line.split('=', 1)
+        target_dict[key] = value
+    
+    # Find additions, deletions and changes
+    source_keys = set(source_dict.keys())
+    target_keys = set(target_dict.keys())
+    
+    added_keys = target_keys - source_keys
+    deleted_keys = source_keys - target_keys
+    common_keys = source_keys & target_keys
+    
+    # Create structured diff data
+    diff_data = {
+        "additions": [(key, target_dict[key]) for key in added_keys],
+        "deletions": [(key, source_dict[key]) for key in deleted_keys],
+        "changes": [(key, source_dict[key], target_dict[key]) 
+                   for key in common_keys if source_dict[key] != target_dict[key]]
+    }
+    
+    return diff_data
 
