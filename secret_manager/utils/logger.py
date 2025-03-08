@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from secret_manager.core.schemas import Secret, Remote
+from secret_manager.core.schemas import Backend, Secret, Remote
 
 # Initialize console
 console = Console()
@@ -72,14 +72,20 @@ def display_secrets(secrets_data: list[dict[str]], project_root: Path = None):
     table.add_column("Environment", style="cyan")
     table.add_column("Secret File Path", style="green")
     table.add_column("Backend", style="magenta")
+    table.add_column("Remote Path", style="yellow")
 
     has_secrets = False
     for item in secrets_data:
         has_secrets = True
         env_name = item["environment"]
         secret: Secret = item["secret"]
+        
+        # For S3 backend, show the S3 key if available
+        remote_path = ""
+        if secret.backend == Backend.S3 and secret.s3_key:
+            remote_path = f"s3://{secret.s3_key}"
 
-        table.add_row(f"[bold]{env_name}[/bold]", str(secret.path), secret.backend.value)
+        table.add_row(f"[bold]{env_name}[/bold]", str(secret.path), secret.backend.value, remote_path)
 
     if has_secrets:
         title = "Secrets"

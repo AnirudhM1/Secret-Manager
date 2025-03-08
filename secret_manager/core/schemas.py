@@ -53,12 +53,14 @@ class Secret:
     path: Path
     backend: Backend
     aws_config: AWSConfig = None
+    s3_key: str = None
 
     def serialize(self) -> dict[str]:
         return {
             "path": self.path.absolute().as_posix(),
             "backend": self.backend.value,
             "aws_config": self.aws_config.serialize() if self.aws_config else None,
+            "s3_key": self.s3_key,
         }
 
     @classmethod
@@ -66,7 +68,8 @@ class Secret:
         path = Path(data["path"])
         backend = Backend(data["backend"])
         aws_config = AWSConfig.deserialize(data["aws_config"]) if data.get("aws_config") else None
-        return cls(path=path, backend=backend, aws_config=aws_config)
+        s3_key = data.get("s3_key")
+        return cls(path=path, backend=backend, aws_config=aws_config, s3_key=s3_key)
 
 
 @dataclass

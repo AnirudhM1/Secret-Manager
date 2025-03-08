@@ -3,12 +3,11 @@
 from pathlib import Path
 import typer
 
-from secret_manager.core import ProjectManager, SecretManager
+from secret_manager.core import ProjectManager, SecretManager, RemoteManager
 from secret_manager.core.schemas import Project, SecretMode, Remote, Backend
-from secret_manager.core.remotes import RemoteManager
 from secret_manager.utils import logger
 from secret_manager.utils.selection import select_from_list
-from secret_manager.wizards.remote import configure_aws_backend
+from secret_manager.wizards.remote import configure_aws_backend, select_or_create_remote, configure_s3_key
 from secret_manager.wizards.project import select_environment, resolve_comparison_environments
 
 
@@ -147,6 +146,73 @@ def diff(source: str = None, target: str = None):
 
     except Exception as e:
         logger.exception(f"Failed to compare environments: {e}")
+        return 1
+
+
+@app.command("track-remote")
+def track_remote(environment: str = None):
+    """Track a remote version of a secret file"""
+    
+    try:
+        current_dir = Path.cwd()
+        project_manager = ProjectManager()
+        remote_manager = RemoteManager()
+        
+        # Find project for current directory
+        if (project := project_manager.get_project(current_dir)) is None:
+            logger.error(f"No project registered for {current_dir}")
+            return 1
+            
+        # Use wizard to select environment if not provided
+        env = SecretMode(environment) if environment else select_environment(
+            "Select environment to configure remote tracking:"
+        )
+        
+        # Create secret manager for this project
+        secret_manager = SecretManager(project)
+        
+        # Check if secret exists for this environment using the secret manager helper
+        secret = secret_manager.get_secret(env)
+        if not secret:
+            logger.error(f"No secret tracked for {env.value} environment. Track a local file first.")
+            return 1
+            
+        # Get the remote name (either selected or created)
+        remote_name, is_new_remote = select_or_create_remote()
+        if not remote_name:
+            return 1
+            
+        # If creating a new remote, configure it
+        if is_new_remote:
+            # Only S3 supported for now
+            backend_type = Backend.S3
+            
+            # Configure AWS backend
+            aws_config = configure_aws_backend()
+            if not aws_config:
+                return 1
+                
+            # Create and add the remote
+            remote = Remote(name=remote_name, type=backend_type, aws_config=aws_config)
+            remote_manager.add_remote(remote)
+            logger.success(f"Remote '{remote_name}' created successfully")
+        
+        # Get the selected remote to determine its type
+        remote = remote_manager.get_remote(remote_name)
+        
+        # For S3 backend, configure S3 key
+        s3_key = None
+        if remote.type == Backend.S3:
+            s3_key = configure_s3_key(secret.path)
+            if not s3_key:
+                logger.error("S3 key is required")
+                return 1
+        
+        # Track the secret with the selected remote
+        return secret_manager.track_remote(env, remote_name, s3_key)
+        
+    except Exception as e:
+        logger.exception(f"Failed to track remote: {e}")
         return 1
 
 

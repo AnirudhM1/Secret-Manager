@@ -2,8 +2,10 @@
 
 import questionary
 from typing import Optional
+from pathlib import Path
 
 from secret_manager.core.schemas import AWSConfig
+from secret_manager.core.remotes import RemoteManager
 from secret_manager.utils import logger
 from secret_manager.utils.selection import select_from_list
 from secret_manager.utils.aws_profiles import read_aws_profiles, get_aws_profile_credentials
@@ -60,3 +62,59 @@ def configure_aws_backend() -> Optional[AWSConfig]:
         AWS_SECRET_ACCESS_KEY=aws_secret_access_key,
         AWS_REGION=aws_region
     )
+
+
+def select_or_create_remote() -> tuple[str, bool]:
+    """Interactive wizard to select an existing remote or create a new one.
+    
+    Returns:
+        Tuple of (remote_name, is_new_remote)
+    """
+    remote_manager = RemoteManager()
+    remotes = remote_manager.list_remotes()
+    
+    # Prepare choice list
+    choices = ["Create new remote"]
+    if remotes:
+        choices.extend([f"{r.name} ({r.type.value})" for r in remotes])
+    
+    # Prompt user to select a remote or create a new one
+    selection = select_from_list(
+        message="Select a remote or create a new one:",
+        choices=choices
+    )
+    
+    # Handle selection
+    if selection == "Create new remote":
+        # Ask for remote name
+        remote_name = questionary.text("Enter name for the new remote:").ask()
+        if not remote_name:
+            logger.error("Remote name cannot be empty")
+            return None, False
+        
+        return remote_name, True
+    else:
+        # Extract remote name from selection (format: "name (type)")
+        remote_name = selection.split(" (")[0]
+        return remote_name, False
+
+
+def configure_s3_key(secret_path: Path) -> str:
+    """Interactive wizard to configure S3 key for a secret.
+    
+    Args:
+        secret_path: Path to the local secret file
+        
+    Returns:
+        S3 key for the remote file
+    """
+    # Default suggestion for S3 key based on filename
+    default_key = f"secrets/{secret_path.name}"
+    
+    # Prompt user for S3 key with default suggestion
+    s3_key = questionary.text(
+        "Enter S3 key for this secret:",
+        default=default_key
+    ).ask()
+    
+    return s3_key
