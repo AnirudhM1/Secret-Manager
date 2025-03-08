@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools >= 61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secret-manager"
+version = "0.0.1"
+description = "A secret manager for managing environment variables"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Anirudh Mukherjee", email = "mukherjeeanirudh100@gmail.com"},
+]
+keywords = ["secrets", "environment-variables", "config", "security", "management", "dotenv", "env"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "typer>=0.15.2",
+    "rich>=13.9.4",
+    "questionary>=2.1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.9.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/AnirudhM1/Secret-Manager"
+Issues = "https://github.com/AnirudhM1/Secret-Manager/issues"
+
+
+[project.scripts]
+secrets = "secret_manager.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["secret_manager*"]
+
+[tool.ruff]
+line-length = 150
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # PEP 8 Naming Conventions
+    "C901",  # McCabe complexity
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "SIM",   # flake8-simplify
+    "UP",    # pyupgrade
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore unused imports in __init__.py files
+"**/__init__.py" = ["F401"]
+
