@@ -61,26 +61,26 @@ class ProjectManager:
         return None
 
     
-    def register(self, project_dir: Path):
+    def register(self, project: Project):
         """Register a new project."""
 
-        if not project_dir.is_dir():
-            raise ValueError(f"Directory does not exist: {project_dir}")
+        if not project.root.is_dir():
+            raise ValueError(f"Directory does not exist or is a file: {project.root}")
         
         # Register the project
-        self.projects[project_dir.absolute()] = Project(root=project_dir.absolute())
+        self.projects[project.root.absolute()] = project
         self._save_projects()
 
     
-    def delete(self, project_dir: Path):
-        """Delete a project registration."""
+    def delete(self, project: Project):
+        """Delete a project registration"""
         
-        # Check if the project is registered
-        if (registered_project := self.get_project(project_dir)) is None:
-            raise ValueError(f"Project not registered: {project_dir}")
+        # Delete the project using its root path
+        if project.root.absolute() not in self.projects:
+            raise ValueError(f"Project not registered: {project.root}")
         
         # Delete the project
-        del self.projects[registered_project.root]
+        del self.projects[project.root.absolute()]
         self._save_projects()
     
 

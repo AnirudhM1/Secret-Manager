@@ -4,7 +4,7 @@ from pathlib import Path
 import typer
 
 from secret_manager.core import ProjectManager, SecretManager
-from secret_manager.core.schemas import SecretMode
+from secret_manager.core.schemas import Project, SecretMode
 from secret_manager.utils import logger
 from secret_manager.utils.selection import select_from_list
 
@@ -27,7 +27,8 @@ def register():
 
     # Register the project
     try:
-        manager.register(current_dir)
+        project = Project(root=current_dir)
+        manager.register(project)
         logger.success(f"Project registered successfully at {current_dir}")
     
     except Exception as e:
@@ -50,7 +51,7 @@ def unregister():
 
     # Unregister the project
     try:
-        manager.delete(project.root)
+        manager.delete(project)  # Changed to pass the project object instead of project.root
         logger.success(f"Project unregistered successfully at {project.root}")
     
     except Exception as e:
