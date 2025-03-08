@@ -3,7 +3,6 @@ from enum import Enum
 from pathlib import Path
 
 
-
 class Backend(str, Enum):
     S3 = "s3"
     NONE = "none"
@@ -21,7 +20,6 @@ class AWSConfig:
     AWS_SECRET_ACCESS_KEY: str
     AWS_REGION: str
 
-
     def serialize(self) -> dict[str]:
         return asdict(self)
 
@@ -36,12 +34,11 @@ class Secret:
     backend: Backend
     aws_config: AWSConfig = None
 
-
     def serialize(self) -> dict[str]:
         return {
             "path": self.path.absolute().as_posix(),
             "backend": self.backend.value,
-            "aws_config": self.aws_config.serialize() if self.aws_config else None
+            "aws_config": self.aws_config.serialize() if self.aws_config else None,
         }
 
     @classmethod
@@ -59,13 +56,12 @@ class Project:
     dev: Secret = None
     prod: Secret = None
 
-
     def serialize(self) -> dict[str]:
         return {
             "root": self.root.absolute().as_posix(),
             "local": self.local.serialize() if self.local else None,
             "dev": self.dev.serialize() if self.dev else None,
-            "prod": self.prod.serialize() if self.prod else None
+            "prod": self.prod.serialize() if self.prod else None,
         }
 
     @classmethod
