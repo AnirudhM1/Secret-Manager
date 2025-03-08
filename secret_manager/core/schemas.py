@@ -9,6 +9,12 @@ class Backend(str, Enum):
     NONE = "none"
 
 
+class SecretMode(str, Enum):
+    LOCAL = "local"
+    DEV = "dev"
+    PROD = "prod"
+
+
 @dataclass
 class AWSConfig:
     AWS_ACCESS_KEY_ID: str

@@ -82,3 +82,15 @@ class ProjectManager:
         # Delete the project
         del self.projects[registered_project.root]
         self._save_projects()
+    
+
+    def update(self, project: Project):
+        """Updates the project"""
+
+        # Check if the project is registered
+        if project.root.absolute() not in self.projects:
+            raise ValueError(f"Project not registered: {project.root}")
+        
+        # Update the project
+        self.projects[project.root.absolute()] = project
+        self._save_projects()
