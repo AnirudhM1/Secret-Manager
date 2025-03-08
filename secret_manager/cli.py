@@ -113,12 +113,42 @@ def list():
     
     # Use SecretManager to get all secrets
     secret_manager = SecretManager(project)
-    secrets = secret_manager.get_all_secrets()
+    secrets = secret_manager.list_secrets()
     
     # Display the secrets
     logger.display_secrets(secrets, project_root=project.root)
     
     return 0
+
+
+@app.command()
+def diff(source: str = "local", target: str = "dev"):
+    """Compare secrets between two environments
+
+    NOTE:
+    - By default it compares local and dev environments
+    - If only one argument is provided, it compares local with that environment
+    
+    """
+    
+    try:
+        current_dir = Path.cwd()
+        project_manager = ProjectManager()
+        
+        # Find project for current directory
+        if (project := project_manager.get_project(current_dir)) is None:
+            logger.error(f"No project registered for {current_dir}")
+            return 1
+        
+        # Use SecretManager to handle the comparison logic
+        source_mode = SecretMode(source)
+        target_mode = SecretMode(target)
+        secret_manager = SecretManager(project)
+        return secret_manager.compare_secrets(source_mode, target_mode)
+            
+    except Exception as e:
+        logger.exception(f"Failed to compare environments: {e}")
+        return 1
 
 
 def main():

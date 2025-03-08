@@ -30,6 +30,11 @@ def info(message: str) -> None:
     console.print(f"[bold blue]ℹ INFO:[/bold blue] {message}")
 
 
+def display(message: str):
+    """Display a message using rich"""
+    console.print(message)
+
+
 
 def panel(*args, **kwargs):
     """Display a panel"""
