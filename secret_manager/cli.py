@@ -149,7 +149,7 @@ def diff(source: str = None, target: str = None):
         return 1
 
 
-@app.command("track-remote")
+@app.command("set-remote")
 def track_remote(environment: str = None):
     """Track a remote version of a secret file"""
     
@@ -201,12 +201,14 @@ def track_remote(environment: str = None):
         remote = remote_manager.get_remote(remote_name)
         
         # For S3 backend, configure S3 key
-        s3_key = None
         if remote.type == Backend.S3:
-            s3_key = configure_s3_key(secret.path)
-            if not s3_key:
+            if not (s3_key := configure_s3_key()):
                 logger.error("S3 key is required")
                 return 1
+        
+        else:
+            logger.error(f"Remote type '{remote.type.value}' is not supported yet")
+            return 1
         
         # Track the secret with the selected remote
         return secret_manager.track_remote(env, remote_name, s3_key)

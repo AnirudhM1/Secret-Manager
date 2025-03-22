@@ -99,22 +99,14 @@ def select_or_create_remote() -> tuple[str, bool]:
         return remote_name, False
 
 
-def configure_s3_key(secret_path: Path) -> str:
-    """Interactive wizard to configure S3 key for a secret.
-    
-    Args:
-        secret_path: Path to the local secret file
-        
-    Returns:
-        S3 key for the remote file
-    """
-    # Default suggestion for S3 key based on filename
-    default_key = f"secrets/{secret_path.name}"
+def configure_s3_key():
+    """Interactive wizard to configure S3 key for a secret"""
     
     # Prompt user for S3 key with default suggestion
-    s3_key = questionary.text(
-        "Enter S3 key for this secret:",
-        default=default_key
-    ).ask()
-    
+    s3_key: str = questionary.text("Enter S3 key for this secret: ").ask()
+
+    # If the s3_key is of the form s3://bucket/path/to/file, extract bucket/path/to/file
+    if s3_key.startswith("s3://"):
+        s3_key = s3_key.replace("s3://", "", count=1)
+
     return s3_key
