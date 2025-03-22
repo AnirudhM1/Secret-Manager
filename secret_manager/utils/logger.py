@@ -122,3 +122,24 @@ def display_remotes(remotes: list[Remote]):
         console.print(Panel(table, title="[bold]Configured Remotes[/bold]", border_style="cyan", padding=(1, 2)))
     else:
         info("No remotes are currently configured")
+
+
+def display_remote_details(remote: Remote):
+    """Display detailed information about a specific remote."""
+    
+    table = Table(title=f"Remote: {remote.name}")
+    table.add_column("Property", style="cyan")
+    table.add_column("Value", style="green")
+    
+    table.add_row("Name", remote.name)
+    table.add_row("Type", remote.type.value)
+    
+    if remote.aws_config:
+        table.add_row("AWS Region", remote.aws_config.AWS_REGION)
+        
+        # Show redacted credentials for security
+        table.add_row("AWS Access Key", remote.aws_config.AWS_ACCESS_KEY_ID)
+        table.add_row("AWS Secret Access Key", f"**********{remote.aws_config.AWS_SECRET_ACCESS_KEY[-4:]}")
+    
+    console.print(table)
+    console.print()

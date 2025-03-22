@@ -300,6 +300,30 @@ def remote_list():
     return 0
 
 
+@remote_app.command("show")
+def remote_show(name: str = None):
+    """Show details of a specific remote."""
+
+    remote_manager = RemoteManager()
+
+    if not name:
+        # Interactively select a remote
+        if not (remotes := remote_manager.list_remotes()):
+            logger.error("No remotes are currently configured")
+            return 1
+
+        name = select_from_list(
+            message="Select a remote to view details:",
+            choices=[r.name for r in remotes]
+        )
+
+    if not (remote := remote_manager.get_remote(name)):
+        logger.error(f"Remote not found: {name}")
+        return 1
+    
+    logger.display_remote_details(remote)
+
+
 def main():
     """Entry point for the CLI."""
     try:
