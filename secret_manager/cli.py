@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import typer
+from typing import Optional
 
 from secret_manager.core import ProjectManager, SecretManager, RemoteManager
 from secret_manager.core.schemas import Project, SecretMode, Remote, Backend
@@ -217,6 +218,150 @@ def track_remote(environment: str = None):
         logger.exception(f"Failed to track remote: {e}")
         return 1
 
+
+@app.command("push")
+def push_secrets(
+    environment: str = typer.Argument(None, help="Environment to push (e.g., dev, prod)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt")
+):
+    """Push local secrets to the configured remote backend"""
+    
+    try:
+        current_dir = Path.cwd()
+        project_manager = ProjectManager()
+        
+        # Find project for current directory
+        if (project := project_manager.get_project(current_dir)) is None:
+            logger.error(f"No project registered for {current_dir}")
+            return 1
+            
+        # Use wizard to select environment if not provided
+        env = SecretMode(environment) if environment else select_environment(
+            "Select environment to push secrets for:"
+        )
+        
+        # Create secret manager for this project
+        secret_manager = SecretManager(project)
+        
+        # Check if remote is configured for this environment
+        if not (secret := secret_manager.get_secret(env)):
+            logger.error(f"No secret tracked for {env} environment. Track a local file first.")
+            return 1
+            
+        if not secret.backend:
+            logger.error(f"No remote configured for {env} environment. Set a remote first.")
+            return 1
+            
+        # Ask for confirmation unless force is specified
+        if not force:
+            confirm = typer.confirm(
+                f"This will overwrite remote secrets for {env} environment. Continue?",
+                prompt_suffix=" ",
+                default=False
+            )
+            if not confirm:
+                logger.info("Operation cancelled")
+                return 0
+                
+        # Push secrets to remote
+        return secret_manager.push_to_remote(env)
+            
+    except Exception as e:
+        logger.exception(f"Failed to push secrets: {e}")
+        return 1
+
+
+@app.command("fetch")
+def fetch_secrets(
+    environment: Optional[str] = typer.Argument(None, help="Environment to fetch (e.g., dev, prod)")
+):
+    """Fetch and display remote secrets without modifying local files"""
+    
+    try:
+        current_dir = Path.cwd()
+        project_manager = ProjectManager()
+        
+        # Find project for current directory
+        if (project := project_manager.get_project(current_dir)) is None:
+            logger.error(f"No project registered for {current_dir}")
+            return 1
+            
+        # Use wizard to select environment if not provided
+        env = SecretMode(environment) if environment else select_environment(
+            "Select environment to fetch secrets for:"
+        )
+        
+        # Create secret manager for this project
+        secret_manager = SecretManager(project)
+        
+        # Check if remote is configured for this environment
+        if not (secret := secret_manager.get_secret(env)):
+            logger.error(f"No secret tracked for {env} environment. Track a local file first.")
+            return 1
+            
+        if not secret.backend:
+            logger.error(f"No remote configured for {env} environment. Set a remote first.")
+            return 1
+            
+        # Fetch secrets from remote
+        return secret_manager.fetch_from_remote(env)
+            
+    except Exception as e:
+        logger.exception(f"Failed to fetch secrets: {e}")
+        return 1
+
+
+@app.command("pull")
+def pull_secrets(
+    environment: Optional[str] = typer.Argument(None, help="Environment to pull (e.g., dev, prod)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt")
+):
+    """Pull secrets from remote and update local files"""
+    
+    try:
+        current_dir = Path.cwd()
+        project_manager = ProjectManager()
+        
+        # Find project for current directory
+        if (project := project_manager.get_project(current_dir)) is None:
+            logger.error(f"No project registered for {current_dir}")
+            return 1
+            
+        # Use wizard to select environment if not provided
+        env = SecretMode(environment) if environment else select_environment(
+            "Select environment to pull secrets for:"
+        )
+        
+        # Create secret manager for this project
+        secret_manager = SecretManager(project)
+        
+        # Check if remote is configured for this environment
+        if not (secret := secret_manager.get_secret(env)):
+            logger.error(f"No secret tracked for {env} environment. Track a local file first.")
+            return 1
+            
+        if not secret.backend:
+            logger.error(f"No remote configured for {env} environment. Set a remote first.")
+            return 1
+            
+        # Ask for confirmation unless force is specified
+        if not force:
+            confirm = typer.confirm(
+                f"This will overwrite local secrets for {env.value} environment. Continue?",
+                prompt_suffix=" ",
+                default=False
+            )
+            if not confirm:
+                logger.info("Operation cancelled")
+                return 0
+                
+        # Pull secrets from remote
+        return secret_manager.pull_from_remote(env)
+            
+    except Exception as e:
+        logger.exception(f"Failed to pull secrets: {e}")
+        return 1
+        
 
 @remote_app.command("add")
 def remote_add(name: str = typer.Argument(..., help="Name of the remote")):

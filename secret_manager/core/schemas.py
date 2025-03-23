@@ -7,6 +7,9 @@ class Backend(str, Enum):
     S3 = "s3"
     NONE = "none"
 
+    def __bool__(self):
+        return self != Backend.NONE
+
 
 class SecretMode(str, Enum):
     LOCAL = "local"

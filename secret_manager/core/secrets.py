@@ -4,6 +4,7 @@ from .projects import ProjectManager
 from .schemas import Project, Secret, Backend, SecretMode
 from secret_manager.utils import diff, logger
 from .remotes import RemoteManager
+from secret_manager.storage import get_storage_backend
 
 
 class SecretManager:
@@ -144,4 +145,97 @@ class SecretManager:
         else:
             logger.display_diff(diff_data, source_mode.value, target_mode.value)
 
+        return 0
+
+
+    def push_to_remote(self, env: SecretMode):
+        """Push local secrets to the configured remote backend"""
+
+        # Get the secret for this environment
+        if not (secret := self.get_secret(env)):
+            return 1
+            
+        # Check if remote is configured
+        if not secret.backend:
+            logger.error(f"No remote configured for {env} environment")
+            return 1
+            
+        # Get based based on backend type
+        if secret.backend == Backend.S3:
+            backend = get_storage_backend("s3", secret.aws_config.serialize())
+
+        else:
+            logger.error(f"Unsupported backend type: {secret.backend}")
+            return 1
+        
+        # Push secrets to remote
+        return backend.write(secret.s3_key, secret.path)
+
+        
+
+    def fetch_from_remote(self, env: SecretMode):
+        """Fetch secrets from the configured remote backend and show diff"""
+
+       # Get the secret for this environment
+        if not (secret := self.get_secret(env)):
+            return 1
+            
+        # Check if remote is configured
+        if not secret.backend:
+            logger.error(f"No remote configured for {env} environment")
+            return 1
+            
+        # Get based based on backend type
+        if secret.backend == Backend.S3:
+            backend = get_storage_backend("s3", secret.aws_config.serialize())
+
+        else:
+            logger.error(f"Unsupported backend type: {secret.backend}")
+            return 1
+        
+
+        # Fetch secret content from remote
+        remote_content = backend.read(secret.s3_key)
+        local_content = secret.path.read_text().strip().splitlines()
+
+        # Generate diff
+        diff_data = diff.compute_diff(remote_content, local_content)
+
+        # Display diff
+        if not any(diff_data.values()):
+            logger.info(f"No differences found between remote and local secrets")
+        else:
+            logger.display_diff(diff_data, "Remote", "Local")
+        
+        return 0
+
+
+    def pull_from_remote(self, env: SecretMode):
+        """Pull secrets from remote and update local file"""
+
+        # Get the secret for this environment
+        if not (secret := self.get_secret(env)):
+            return 1
+            
+        # Check if remote is configured
+        if not secret.backend:
+            logger.error(f"No remote configured for {env} environment")
+            return 1
+            
+        # Get based based on backend type
+        if secret.backend == Backend.S3:
+            backend = get_storage_backend("s3", secret.aws_config.serialize())
+
+        else:
+            logger.error(f"Unsupported backend type: {secret.backend}")
+            return 1
+        
+
+        # Fetch secret content from remote
+        remote_content = backend.read(secret.s3_key)
+
+        # Write content to local file
+        secret.path.write_text("\n".join(remote_content) + "\n")
+
+        logger.success(f"Successfully pulled secrets from remote to local file: {secret.path}")
         return 0

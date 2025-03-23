@@ -65,8 +65,8 @@ def compute_diff(source_content: list[str], target_content: list[str]) -> dict:
 
     # Create structured diff data
     diff_data = {
-        "additions": [(key, target_dict[key]) for key in added_keys],
-        "deletions": [(key, source_dict[key]) for key in deleted_keys],
+        "additions": [(key, source_dict[key]) for key in deleted_keys],
+        "deletions": [(key, target_dict[key]) for key in added_keys],
         "changes": [(key, source_dict[key], target_dict[key]) for key in common_keys if source_dict[key] != target_dict[key]],
     }
 
