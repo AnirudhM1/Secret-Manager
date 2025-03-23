@@ -107,6 +107,6 @@ def configure_s3_key():
 
     # If the s3_key is of the form s3://bucket/path/to/file, extract bucket/path/to/file
     if s3_key.startswith("s3://"):
-        s3_key = s3_key.replace("s3://", "", count=1)
+        s3_key = s3_key.replace("s3://", "",  1)
 
     return s3_key

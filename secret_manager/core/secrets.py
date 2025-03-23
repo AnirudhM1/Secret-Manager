@@ -199,7 +199,7 @@ class SecretManager:
         local_content = secret.path.read_text().strip().splitlines()
 
         # Generate diff
-        diff_data = diff.compute_diff(remote_content, local_content)
+        diff_data = diff.compute_diff(local_content, remote_content)
 
         # Display diff
         if not any(diff_data.values()):

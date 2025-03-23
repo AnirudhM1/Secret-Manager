@@ -33,7 +33,7 @@ class S3StorageBackend(StorageBackend):
             self.client.upload_file(
                 Filename=local_path.as_posix(),
                 Bucket=bucket,
-                key=s3_key,
+                Key=s3_key,
             )
 
             logger.info(f"Pushed changes to s3://{bucket}/{s3_key}")
