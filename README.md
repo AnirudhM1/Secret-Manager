@@ -71,9 +71,78 @@ Unregister the current project:
 secrets unregister
 ```
 
-
 ### Remote AWS S3 Syncing
+
+#### Managing Remotes
+
+Add a new remote backend:
+
 ```bash
-# coming soon!
+secrets remote add my-s3-remote
+# Follow the prompts to setup a S3 remote
+```
+
+> [!NOTE]
+> Currently only S3 backend is supported
+
+List all configured remotes:
+
+```bash
+secrets remote list
+```
+
+Show details of a specific remote:
+
+```bash
+secrets remote show my-s3-remote
+```
+
+Remove a remote backend:
+
+```bash
+secrets remote remove my-s3-remote
+```
+
+#### Working with Remote Secrets
+
+Configure remote tracking for an environment:
+
+```bash
+secrets set-remote prod
+```
+
+Push local secrets to the remote backend:
+
+```bash
+secrets push prod
+# With confirmation bypass
+secrets push prod --force
+```
+
+> [!WARNING]
+> This overrides the remote file with the contents of the local file
+> Make sure that the local file contains changes present in the remote to avoid discarding them
+
+Fetch and display remote secrets without modifying local files:
+
+```bash
+secrets fetch prod
+```
+
+Pull secrets from remote and update local files:
+
+```bash
+secrets pull prod
+# With confirmation bypass
+secrets pull prod --force
+```
+
+> [!WARNING]
+> This overrides the remote file with the contents of the local file
+
+Remove remote association from a tracked secret:
+
+```bash
+secrets unset-remote prod
 ```
 
