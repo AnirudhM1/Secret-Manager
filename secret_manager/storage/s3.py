@@ -19,11 +19,8 @@ class S3StorageBackend(StorageBackend):
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
             region_name=region,
-            config = Config(
-                signature_version="s3v4", s3={"use_accelerate_endpoint": False}
-            ),
+            config=Config(signature_version="s3v4", s3={"use_accelerate_endpoint": False}),
         )
-
 
     def write(self, key: str, local_path: Path):
         """Write data to S3"""
@@ -38,11 +35,10 @@ class S3StorageBackend(StorageBackend):
 
             logger.info(f"Pushed changes to s3://{bucket}/{s3_key}")
             return 0
-        
+
         except Exception as e:
             logger.error(f"Failed to write to s3://{bucket}/{s3_key} :: {e}")
             return 1
-
 
     def read(self, key: str):
         """Read data from S3"""
@@ -55,7 +51,6 @@ class S3StorageBackend(StorageBackend):
         lines = [line for line in decoded_lines if line]
 
         return lines
-    
 
     def exists(self, key: str):
         try:
@@ -64,5 +59,3 @@ class S3StorageBackend(StorageBackend):
             return True
         except ClientError:
             return False
-
-

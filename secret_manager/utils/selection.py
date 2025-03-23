@@ -1,10 +1,9 @@
 """Utility functions for user selections and input gathering."""
 
 import questionary
-from typing import Optional
 
 
-def select_from_list(message: str, choices: list[str], default: Optional[str] = None) -> str:
+def select_from_list(message: str, choices: list[str], default: str = None) -> str:
     """Select an option from a list.
 
     Args:

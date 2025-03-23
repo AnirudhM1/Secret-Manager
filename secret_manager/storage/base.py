@@ -7,7 +7,6 @@ from pathlib import Path
 class StorageBackend(ABC):
     """Abstract base class for all storage backends."""
 
-
     @abstractmethod
     def write(self, key: str, local_path: Path) -> int:
         """Write data to the storage backend.
@@ -29,7 +28,6 @@ class StorageBackend(ABC):
             list of lines read from the remote file
         """
         pass
-
 
     @abstractmethod
     def exists(self, key: str) -> bool:

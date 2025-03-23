@@ -1,9 +1,8 @@
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from .constants import DEFAULT_BASE_DIR, REMOTES_FILE
-from .schemas import Remote, Backend, AWSConfig
+from .schemas import Remote
 
 
 class RemoteManager:
@@ -26,7 +25,7 @@ class RemoteManager:
         if not self.remotes_file.exists():
             json.dump([], self.remotes_file.open("w"), indent=4)
 
-    def _load_remotes(self) -> Dict[str, Remote]:
+    def _load_remotes(self) -> dict[str, Remote]:
         """Load remotes from the remotes file."""
         if not self.remotes_file.exists():
             return {}
@@ -45,7 +44,7 @@ class RemoteManager:
         remotes_data = [remote.serialize() for remote in self.remotes.values()]
         json.dump(remotes_data, self.remotes_file.open("w"), indent=4)
 
-    def get_remote(self, name: str) -> Optional[Remote]:
+    def get_remote(self, name: str):
         """Get a remote by name."""
         return self.remotes.get(name)
 
@@ -65,6 +64,6 @@ class RemoteManager:
         del self.remotes[name]
         self._save_remotes()
 
-    def list_remotes(self) -> List[Remote]:
-        """List all remotes."""
+    def list_remotes(self) -> list[Remote]:
+        """List all remotes"""
         return list(self.remotes.values())

@@ -3,9 +3,9 @@
 import shutil
 from pathlib import Path
 
+from secret_manager.core.constants import DEFAULT_BASE_DIR
 from secret_manager.storage.base import StorageBackend
 from secret_manager.utils import logger
-from secret_manager.core.constants import DEFAULT_BASE_DIR
 
 
 class LocalStorageBackend(StorageBackend):
@@ -16,7 +16,6 @@ class LocalStorageBackend(StorageBackend):
         self.base_dir = base_dir or Path(DEFAULT_BASE_DIR) / "storage"
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
-
     def write(self, key: str, local_path: Path):
         """Write data to local storage"""
 
@@ -24,10 +23,10 @@ class LocalStorageBackend(StorageBackend):
             # Get destination path and make sure parent directories exist
             dest_path = self.base_dir / key
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Copy the file
             shutil.copy2(local_path, dest_path)
-            
+
             logger.info(f"Copied file to {dest_path}")
             return 0
         except Exception as e:
@@ -46,11 +45,10 @@ class LocalStorageBackend(StorageBackend):
 
             if dest_path.is_dir():
                 raise IsADirectoryError(f"Path is a directory: {dest_path}")
-            
 
             lines = [line.strip() for line in dest_path.read_text().strip().splitlines() if line.strip()]
             return lines
-                
+
         except Exception as e:
             logger.error(f"Failed to read from {key}: {e}")
             return []

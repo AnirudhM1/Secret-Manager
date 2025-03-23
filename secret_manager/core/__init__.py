@@ -1,4 +1,4 @@
 from .projects import ProjectManager
-from .schemas import Project, Secret, Backend, SecretMode, Remote
-from .secrets import SecretManager
 from .remotes import RemoteManager
+from .schemas import Backend, Project, Remote, Secret, SecretMode
+from .secrets import SecretManager

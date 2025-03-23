@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from .projects import ProjectManager
-from .schemas import Project, Secret, Backend, SecretMode
-from secret_manager.utils import diff, logger
-from .remotes import RemoteManager
 from secret_manager.storage import get_storage_backend
+from secret_manager.utils import diff, logger
+
+from .projects import ProjectManager
+from .remotes import RemoteManager
+from .schemas import Backend, Project, Secret, SecretMode
 
 
 class SecretManager:
@@ -34,15 +35,15 @@ class SecretManager:
 
         # Update the project with the given secret
         self.project_manager.update(self.project)
-    
+
     def track_remote(self, mode: SecretMode, remote_name: str, s3_key: str = None) -> int:
         """Associate a remote backend with a secret file for the specified mode.
-        
+
         Args:
             mode: The environment mode (LOCAL, DEV, PROD)
             remote_name: Name of the remote backend to use
             s3_key: S3 key path (for S3 backends only)
-            
+
         Returns:
             0 on success, 1 on failure
         """
@@ -51,28 +52,28 @@ class SecretManager:
         if not secret:
             logger.error(f"No secret tracked for {mode.value} environment. Track a local file first.")
             return 1
-            
+
         # Get the remote configuration
         remote_manager = RemoteManager()
         remote = remote_manager.get_remote(remote_name)
         if not remote:
             logger.error(f"Remote '{remote_name}' does not exist")
             return 1
-            
+
         # Update the secret with remote backend information
         secret.backend = remote.type
-        
+
         # For S3 backend, ensure we have an S3 key
         if remote.type == Backend.S3:
             if not s3_key:
-                logger.error(f"S3 key is required for S3 backend")
+                logger.error("S3 key is required for S3 backend")
                 return 1
-                
+
             # Copy AWS config from the remote to the secret
             secret.aws_config = remote.aws_config
             # Store S3 key in the secret
             secret.s3_key = s3_key
-            
+
         # Update the project with the modified secret
         if mode == SecretMode.LOCAL:
             self.project.local = secret
@@ -80,7 +81,7 @@ class SecretManager:
             self.project.dev = secret
         elif mode == SecretMode.PROD:
             self.project.prod = secret
-            
+
         # Save the updated project
         self.project_manager.update(self.project)
         logger.success(f"Secret for {mode.value} environment is now tracked with remote '{remote_name}'")
@@ -147,19 +148,18 @@ class SecretManager:
 
         return 0
 
-
     def push_to_remote(self, env: SecretMode):
         """Push local secrets to the configured remote backend"""
 
         # Get the secret for this environment
         if not (secret := self.get_secret(env)):
             return 1
-            
+
         # Check if remote is configured
         if not secret.backend:
             logger.error(f"No remote configured for {env} environment")
             return 1
-            
+
         # Get based based on backend type
         if secret.backend == Backend.S3:
             backend = get_storage_backend("s3", secret.aws_config.serialize())
@@ -167,24 +167,22 @@ class SecretManager:
         else:
             logger.error(f"Unsupported backend type: {secret.backend}")
             return 1
-        
+
         # Push secrets to remote
         return backend.write(secret.s3_key, secret.path)
-
-        
 
     def fetch_from_remote(self, env: SecretMode):
         """Fetch secrets from the configured remote backend and show diff"""
 
-       # Get the secret for this environment
+        # Get the secret for this environment
         if not (secret := self.get_secret(env)):
             return 1
-            
+
         # Check if remote is configured
         if not secret.backend:
             logger.error(f"No remote configured for {env} environment")
             return 1
-            
+
         # Get based based on backend type
         if secret.backend == Backend.S3:
             backend = get_storage_backend("s3", secret.aws_config.serialize())
@@ -192,7 +190,6 @@ class SecretManager:
         else:
             logger.error(f"Unsupported backend type: {secret.backend}")
             return 1
-        
 
         # Fetch secret content from remote
         remote_content = backend.read(secret.s3_key)
@@ -203,12 +200,11 @@ class SecretManager:
 
         # Display diff
         if not any(diff_data.values()):
-            logger.info(f"No differences found between remote and local secrets")
+            logger.info("No differences found between remote and local secrets")
         else:
             logger.display_diff(diff_data, "Remote", "Local")
-        
-        return 0
 
+        return 0
 
     def pull_from_remote(self, env: SecretMode):
         """Pull secrets from remote and update local file"""
@@ -216,12 +212,12 @@ class SecretManager:
         # Get the secret for this environment
         if not (secret := self.get_secret(env)):
             return 1
-            
+
         # Check if remote is configured
         if not secret.backend:
             logger.error(f"No remote configured for {env} environment")
             return 1
-            
+
         # Get based based on backend type
         if secret.backend == Backend.S3:
             backend = get_storage_backend("s3", secret.aws_config.serialize())
@@ -229,7 +225,6 @@ class SecretManager:
         else:
             logger.error(f"Unsupported backend type: {secret.backend}")
             return 1
-        
 
         # Fetch secret content from remote
         remote_content = backend.read(secret.s3_key)
@@ -247,23 +242,23 @@ class SecretManager:
         if not (secret := self.get_secret(mode)):
             logger.error(f"No secret tracked for {mode.value} environment.")
             return 1
-            
+
         # Check if there's a remote backend configured
         if not secret.backend:
             logger.error(f"No remote backend configured for {mode.value} environment.")
             return 1
-            
+
         # Store the remote backend type for logging
         previous_backend = secret.backend
-        
+
         # Reset the backend configuration
         secret.backend = Backend.NONE
-        
+
         # Clear S3-specific configurations if they exist
         if previous_backend is Backend.S3:
             secret.aws_config = None
             secret.s3_key = None
-            
+
         # Update the project with the modified secret
         if mode == SecretMode.LOCAL:
             self.project.local = secret
@@ -271,7 +266,7 @@ class SecretManager:
             self.project.dev = secret
         elif mode == SecretMode.PROD:
             self.project.prod = secret
-            
+
         # Save the updated project
         self.project_manager.update(self.project)
         logger.success(f"Remote {previous_backend.value} backend removed from {mode.value} environment secret")
