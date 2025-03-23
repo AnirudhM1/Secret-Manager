@@ -239,3 +239,40 @@ class SecretManager:
 
         logger.success(f"Successfully pulled secrets from remote to local file: {secret.path}")
         return 0
+
+    def remove_remote(self, mode: SecretMode) -> int:
+        """Remove remote backend association from a secret for the specified mode"""
+
+        # Get the secret for this mode
+        if not (secret := self.get_secret(mode)):
+            logger.error(f"No secret tracked for {mode.value} environment.")
+            return 1
+            
+        # Check if there's a remote backend configured
+        if not secret.backend:
+            logger.error(f"No remote backend configured for {mode.value} environment.")
+            return 1
+            
+        # Store the remote backend type for logging
+        previous_backend = secret.backend
+        
+        # Reset the backend configuration
+        secret.backend = Backend.NONE
+        
+        # Clear S3-specific configurations if they exist
+        if previous_backend is Backend.S3:
+            secret.aws_config = None
+            secret.s3_key = None
+            
+        # Update the project with the modified secret
+        if mode == SecretMode.LOCAL:
+            self.project.local = secret
+        elif mode == SecretMode.DEV:
+            self.project.dev = secret
+        elif mode == SecretMode.PROD:
+            self.project.prod = secret
+            
+        # Save the updated project
+        self.project_manager.update(self.project)
+        logger.success(f"Remote {previous_backend.value} backend removed from {mode.value} environment secret")
+        return 0

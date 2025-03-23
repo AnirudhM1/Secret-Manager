@@ -363,6 +363,35 @@ def pull_secrets(
         return 1
         
 
+@app.command("unset-remote")
+def unset_remote(environment: str = None):
+    """Remove remote backend association from a tracked secret"""
+    
+    try:
+        current_dir = Path.cwd()
+        project_manager = ProjectManager()
+        
+        # Find project for current directory
+        if (project := project_manager.get_project(current_dir)) is None:
+            logger.error(f"No project registered for {current_dir}")
+            return 1
+            
+        # Use wizard to select environment if not provided
+        env = SecretMode(environment) if environment else select_environment(
+            "Select environment to remove remote tracking:"
+        )
+        
+        # Create secret manager for this project
+        secret_manager = SecretManager(project)
+        
+        # Remove remote association
+        return secret_manager.remove_remote(env)
+            
+    except Exception as e:
+        logger.exception(f"Failed to remove remote association: {e}")
+        return 1
+
+
 @remote_app.command("add")
 def remote_add(name: str = typer.Argument(..., help="Name of the remote")):
     """Add a new remote backend"""
